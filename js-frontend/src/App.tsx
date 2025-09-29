@@ -7,6 +7,13 @@ function App() {
   const [socket, setSocket] = useState<WebSocket | null>(null);
 
   useEffect(() => {
+    async function messagesStart() {
+      const result = await fetch("/chat");
+      setMessages(await result.json());
+    }
+
+    messagesStart();
+
     const ws = new WebSocket("ws://localhost:5000/ws"); // Point to your C# API
     setSocket(ws);
 
@@ -34,7 +41,7 @@ function App() {
   }, []);
 
   const sendMessage = async () => {
-    await fetch(`http://localhost:5000/chat/client?message=${myMessage}`);
+    await fetch(`/chat/client?message=${myMessage}`);
   }
 
   const pingMessage = () => {

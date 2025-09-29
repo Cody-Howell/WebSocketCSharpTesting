@@ -5,7 +5,7 @@ GET {{Server_HostAddress}}/hi
 ###
 GET {{Server_HostAddress}}/chat
 ###
-GET {{Server_HostAddress}}/chat/cody?message=Hello%20There
+GET {{Server_HostAddress}}/chat/audrey?message=Hello%20There
 ###
 GET {{Server_HostAddress}}/shutdown
 ###
