@@ -12,8 +12,9 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseWebSockets();
 
-// Test of removing 
-CancellationTokenSource cts = new();
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.UseRouting();
 
 app.MapGet("/hi", () => "Hello World");
 
@@ -31,7 +32,7 @@ var sockets = new System.Collections.Concurrent.ConcurrentDictionary<string, Web
 var chat = app.Services.GetRequiredService<Chat>();
 chat.MessageAdded += async (ChatMessage m) => {
     var json = System.Text.Json.JsonSerializer.Serialize(m);
-    var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+    var bytes = Encoding.UTF8.GetBytes(json);
     var segment = new ArraySegment<byte>(bytes);
 
     var tasks = new List<System.Threading.Tasks.Task>();
@@ -39,7 +40,7 @@ chat.MessageAdded += async (ChatMessage m) => {
         var ws = kv.Value;
         if (ws.State == WebSocketState.Open) {
             try {
-                tasks.Add(ws.SendAsync(segment, WebSocketMessageType.Text, true, System.Threading.CancellationToken.None));
+                tasks.Add(ws.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None));
             } catch {
                 // ignore send errors; cleanup will happen elsewhere
             }
@@ -47,20 +48,11 @@ chat.MessageAdded += async (ChatMessage m) => {
     }
 
     try {
-        await System.Threading.Tasks.Task.WhenAll(tasks);
+        await Task.WhenAll(tasks);
     } catch {
         // swallowing exceptions for now
     }
 };
-
-// Doesn't close the app, but terminates all connections. Might be useful :)
-// this works as expected! Cleans all, then resets for more connections. 
-app.MapGet("/shutdown", () => {
-    cts.Cancel();
-    Console.WriteLine("Cleared all current clients.");
-    cts = new();
-    return Results.Ok("Shutdown signal sent");
-});
 
 app.Map("/ws", async context => {
     if (context.WebSockets.IsWebSocketRequest) {
@@ -103,6 +95,7 @@ app.Map("/ws", async context => {
     }
 });
 
+app.MapFallbackToFile("index.html");
 
 
 await app.RunAsync();
